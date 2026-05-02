@@ -181,6 +181,14 @@ log/
 *.bag
 *.db3
 
+# YOLO Models (too large - download via: pip install ultralytics)
+*.pt
+*.onnx
+*.pb
+*.torchscript
+yolov8*.pt
+runs/
+
 # Pyre type checker
 .pyre/
 

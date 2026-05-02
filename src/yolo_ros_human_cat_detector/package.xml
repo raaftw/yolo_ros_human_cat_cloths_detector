@@ -11,12 +11,15 @@
   <depend>rclpy</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>vision_msgs</depend>
+  <depend>geometry_msgs</depend>
   <depend>launch</depend>
   <depend>launch_ros</depend>
 
   <exec_depend>python3</exec_depend>
   <exec_depend>python3-pip</exec_depend>
   <exec_depend>python3-opencv</exec_depend>
+  <exec_depend>python3-ultralytics</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

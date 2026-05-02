@@ -1,42 +1,34 @@
 # YOLO ROS2 Human/Cat Detector
 
-This repository is a ROS2 Humble workspace scaffold for a YOLO-based detector that will first target people and cats from a webcam stream.
+Minimal ROS2 Humble workspace that runs a YOLO detector on a webcam stream. It publishes an annotated image and JSON detections.
 
-## What is in the workspace
+**Quick overview**
+- Package: `src/yolo_ros_human_cat_detector`
+- Camera publisher: `webcam_publisher_node` (defaults to Logitech C310 at `/dev/video2`)
+- Detector node: `yolo_detector_node` (YOLOv8 by default)
+- Combined launch: `launch/complete_pipeline.launch.py`
 
-- A ROS2 Python package at `src/yolo_ros_human_cat_detector`
-- A webcam publisher node for the Logitech C310
-- A starter detector node with ROS parameters and a camera subscription
-- A launch file for starting the node with command-line overrides
-- A default parameter file for the node
+**First-time setup**
 
-## Workspace layout
+0. Install Python YOLO support (ultralytics) and download model (recommended in a venv):
 
-```text
-.
-├── README.md
-└── src
-	└── yolo_ros_human_cat_detector
-		├── config
-		├── launch
-		├── package.xml
-		├── resource
-		├── setup.py
-		└── yolo_ros_human_cat_detector
+```bash
+# optional: create and activate a virtualenv
+python3 -m venv .venv && source .venv/bin/activate
+pip install --upgrade pip
+pip install ultralytics
+# ultralytics will download models (e.g. yolov8n.pt) on first use; to pre-download run:
+python -c "from ultralytics import YOLO; Y=YOLO('yolov8n.pt'); Y.model"
 ```
 
-## Build and run
-
-### First-time setup after cloning
-
-Install the ROS packages used by the camera node and image viewer:
+1. Install system deps:
 
 ```bash
 sudo apt update
 sudo apt install ros-humble-image-tools
 ```
 
-Then build the workspace from the repository root:
+2. Build the workspace (from repo root):
 
 ```bash
 source /opt/ros/humble/setup.bash
@@ -44,54 +36,67 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-### Launch the camera publisher
+**Run full pipeline (camera + detector + viewer)**
 
-In a new terminal:
+Start everything (camera, detector, viewer):
 
 ```bash
 source /opt/ros/humble/setup.bash
-cd ~/yolo_ros_human_cat_cloths_detector
+source install/setup.bash
+ros2 launch yolo_ros_human_cat_detector complete_pipeline.launch.py
+```
+
+**Detections JSON**
+
+The detector publishes detection results as JSON on `/yolo/detections_json` (type `std_msgs/String`). Each message contains a JSON array of detections; each detection is an object with the following fields:
+
+- `class`: string — COCO class name (e.g. "person")
+- `confidence`: float — detection confidence (0..1)
+- `x_min`, `y_min`, `x_max`, `y_max`: ints — bounding box pixel coordinates
+- `width`, `height`: ints — box size in pixels
+- `center_x`, `center_y`: ints — center pixel coordinates
+
+Example subscriber snippet (Python):
+
+```python
+import json
+from std_msgs.msg import String
+
+def cb(msg: String):
+	detections = json.loads(msg.data)
+	for d in detections:
+		print(d['class'], d['confidence'], d['center_x'], d['center_y'])
+```
+
+
+**Raw camera stream (smoke test)**
+
+Start camera publisher only:
+
+```bash
+source /opt/ros/humble/setup.bash
 source install/setup.bash
 ros2 launch yolo_ros_human_cat_detector camera.launch.py
 ```
 
-To test the camera node by itself on the C310:
+View the raw camera stream (viewer expects RGB input):
 
 ```bash
-ros2 launch yolo_ros_human_cat_detector camera.launch.py
-```
-
-The camera node defaults to `/dev/video2`, which is the Logitech C310 on this laptop.
-
-### View the stream in a terminal app
-
-The image viewer that works reliably here is `showimage` from `image_tools`:
-
-```bash
-source /opt/ros/humble/setup.bash
-cd ~/yolo_ros_human_cat_cloths_detector
-source install/setup.bash
 ros2 run image_tools showimage --ros-args -r image:=/camera/image_raw
 ```
 
-### Optional detector launch
-
-Once the camera view works, you can start the detector node too:
+**Detector-only**
 
 ```bash
-source /opt/ros/humble/setup.bash
-cd ~/yolo_ros_human_cat_cloths_detector
-source install/setup.bash
 ros2 launch yolo_ros_human_cat_detector detector.launch.py
 ```
 
-## Next implementation steps
+**Camera compatibility**
+- The code uses OpenCV `VideoCapture` (V4L2 backend). It is not tied to the C310; any V4L2-compatible USB webcam should work. The camera node defaults to `/dev/video2` — change device via the camera launch arg or node parameter to use another device.
 
-1. Wire in the YOLO model loader and inference path.
-2. Publish detections with a structured ROS message.
-3. Add annotated image output for visualization.
-4. Add a laptop-compute mode and, later, a Pi-only fallback.
+**Notes**
+- Models (e.g., `yolov8n.pt`) are large — they are ignored by `.gitignore`. Install `ultralytics` so the model can be downloaded/used:
 
-## Notes
-
-The current code is a clean scaffold, not a finished detector yet. That keeps the first implementation focused and makes it easier to swap in a pretrained model later.
+```bash
+pip install ultralytics
+```

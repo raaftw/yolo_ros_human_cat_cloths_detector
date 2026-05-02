@@ -9,8 +9,7 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', [f'resource/{package_name}']),
         (f'share/{package_name}', ['package.xml']),
-        (f'share/{package_name}/launch', ['launch/detector.launch.py']),
-        (f'share/{package_name}/launch', ['launch/camera.launch.py']),
+        (f'share/{package_name}/launch', ['launch/detector.launch.py', 'launch/camera.launch.py', 'launch/complete_pipeline.launch.py']),
         (f'share/{package_name}/config', ['config/detector.yaml']),
     ],
     install_requires=['setuptools'],
