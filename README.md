@@ -46,26 +46,22 @@ source install/setup.bash
 ros2 launch yolo_ros_human_cat_detector complete_pipeline.launch.py
 ```
 
-**Detections JSON**
+**Detections**
 
-The detector publishes detection results as JSON on `/yolo/detections_json` (type `std_msgs/String`). Each message contains a JSON array of detections; each detection is an object with the following fields:
+The detector publishes structured detections on `/yolo/detections` with type `vision_msgs/Detection2DArray` and an annotated image on `/yolo/annotated_image` (`sensor_msgs/Image`). Each `Detection2D` includes a `results` entry with `hypothesis.class_id` (string) and `hypothesis.score`, and a `bbox` with `center.position.x/y` and `size_x/size_y`.
 
-- `class`: string — COCO class name (e.g. "person")
-- `confidence`: float — detection confidence (0..1)
-- `x_min`, `y_min`, `x_max`, `y_max`: ints — bounding box pixel coordinates
-- `width`, `height`: ints — box size in pixels
-- `center_x`, `center_y`: ints — center pixel coordinates
-
-Example subscriber snippet (Python):
+Minimal Python subscriber example:
 
 ```python
-import json
-from std_msgs.msg import String
+from vision_msgs.msg import Detection2DArray
 
-def cb(msg: String):
-	detections = json.loads(msg.data)
-	for d in detections:
-		print(d['class'], d['confidence'], d['center_x'], d['center_y'])
+def cb(msg: Detection2DArray):
+	for det in msg.detections:
+		cls = det.results[0].hypothesis.class_id
+		score = det.results[0].hypothesis.score
+		cx = det.bbox.center.position.x
+		cy = det.bbox.center.position.y
+		print(cls, score, cx, cy)
 ```
 
 
