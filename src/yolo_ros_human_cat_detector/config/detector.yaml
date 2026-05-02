@@ -1,0 +1,9 @@
+yolo_detector_node:
+  ros__parameters:
+    input_image_topic: /camera/image_raw
+    output_image_topic: /yolo/annotated_image
+    detections_topic: /yolo/detections
+    model_name: yolov8n.pt
+    confidence_threshold: 0.35
+    device: cpu
+    publish_annotated_image: true

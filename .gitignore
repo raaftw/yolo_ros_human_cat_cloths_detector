@@ -172,6 +172,15 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# ROS2 / colcon
+build/
+install/
+log/
+.colcon/
+.ros/
+*.bag
+*.db3
+
 # Pyre type checker
 .pyre/
 
