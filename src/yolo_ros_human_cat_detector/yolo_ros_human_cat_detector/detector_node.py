@@ -6,6 +6,7 @@ import numpy as np
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, QoSHistoryPolicy
 from sensor_msgs.msg import Image
 from vision_msgs.msg import Detection2DArray, Detection2D, ObjectHypothesisWithPose
 from geometry_msgs.msg import Pose2D
@@ -51,12 +52,14 @@ class YoloDetectorNode(Node):
         # Only publish person and cat detections by default
         self.allowed_classes = {'person', 'cat'}
 
-        # Publishers
-        self.image_pub = self.create_publisher(Image, self.output_image_topic, 10)
-        self.detections_pub = self.create_publisher(Detection2DArray, self.output_detections_topic, 10)
+        # Publishers (depth=1: only keep latest, drop old ones)
+        qos_pub = QoSProfile(depth=1, history=QoSHistoryPolicy.KEEP_LAST)
+        self.image_pub = self.create_publisher(Image, self.output_image_topic, qos_profile=qos_pub)
+        self.detections_pub = self.create_publisher(Detection2DArray, self.output_detections_topic, qos_profile=qos_pub)
 
-        # Subscriber
-        self.create_subscription(Image, self.input_topic, self.image_callback, 10)
+        # Subscriber (depth=1: only keep latest image, drop old ones)
+        qos = QoSProfile(depth=1, history=QoSHistoryPolicy.KEEP_LAST)
+        self.create_subscription(Image, self.input_topic, self.image_callback, qos)
 
         self.get_logger().info(
             f'YOLO detector ready. Input: {self.input_topic}, '
