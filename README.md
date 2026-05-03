@@ -1,6 +1,6 @@
 # YOLO ROS2 Human/Cat Detector
 
-Minimal ROS2 Humble workspace that runs a YOLO detector on a webcam stream. It publishes an annotated image and JSON detections.
+Minimal ROS2 Humble workspace that runs a YOLO detector on a webcam stream. It publishes an annotated image and structured detections (person and cat only).
 
 **Quick overview**
 - Package: `src/yolo_ros_human_cat_detector`
@@ -46,6 +46,12 @@ source install/setup.bash
 ros2 launch yolo_ros_human_cat_detector complete_pipeline.launch.py
 ```
 
+To run on GPU (faster inference):
+
+```bash
+ros2 launch yolo_ros_human_cat_detector complete_pipeline.launch.py device:=cuda:0
+```
+
 **Detections**
 
 The detector publishes structured detections on `/yolo/detections` with type `vision_msgs/Detection2DArray` and an annotated image on `/yolo/annotated_image` (`sensor_msgs/Image`). Each `Detection2D` includes a `results` entry with `hypothesis.class_id` (string) and `hypothesis.score`, and a `bbox` with `center.position.x/y` and `size_x/size_y`.
@@ -81,18 +87,45 @@ View the raw camera stream (viewer expects RGB input):
 ros2 run image_tools showimage --ros-args -r image:=/camera/image_raw
 ```
 
-**Detector-only**
+**Detector + viewer (for external camera, e.g. Raspberry Pi)**
+
+If your camera is running on another machine (e.g. Pi) and publishing `/camera/image_raw`, run detector and viewer only:
+
+```bash
+ros2 launch yolo_ros_human_cat_detector detector_and_viewer.launch.py
+```
+
+With GPU:
+
+```bash
+ros2 launch yolo_ros_human_cat_detector detector_and_viewer.launch.py device:=cuda:0
+```
+
+**Detector-only (no viewer)**
+
+For headless operation:
 
 ```bash
 ros2 launch yolo_ros_human_cat_detector detector.launch.py
 ```
 
-**Camera compatibility**
-- The code uses OpenCV `VideoCapture` (V4L2 backend). It is not tied to the C310; any V4L2-compatible USB webcam should work. The camera node defaults to `/dev/video2` — change device via the camera launch arg or node parameter to use another device.
+**View detections in terminal**
 
-**Notes**
-- Models (e.g., `yolov8n.pt`) are large — they are ignored by `.gitignore`. Install `ultralytics` so the model can be downloaded/used:
+To see detection messages as they stream:
 
 ```bash
-pip install ultralytics
+ros2 topic echo /yolo/detections
+```
+
+To confirm the detector is publishing:
+
+```bash
+ros2 topic hz /yolo/detections
+```
+
+**Camera compatibility**
+- The code uses OpenCV `VideoCapture` (V4L2 backend). It is not tied to the C310; any V4L2-compatible USB webcam should work. The camera node defaults to `/dev/video2` — change device via launch args:
+
+```bash
+ros2 launch yolo_ros_human_cat_detector complete_pipeline.launch.py device:=/dev/video0
 ```
